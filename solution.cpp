@@ -542,7 +542,7 @@ int gauss_classic_row(double *matrix, double *inverse_matrix, int *index, int n,
 		}
 	}
 
-	for (int k = 0; k < n; k++) // Обратный ход
+	/*for (int k = 0; k < n; k++) // Обратный ход
 		for (int i = n - 1; i >= 0; i--)
 		{
 			index_tmp = i * row_ind;
@@ -550,7 +550,21 @@ int gauss_classic_row(double *matrix, double *inverse_matrix, int *index, int n,
 			for (int j = i + 1; j < n; j++)
 				tmp_ -= matrix[index_tmp + j] * inverse_matrix[j * row_ind + k];
 			inverse_matrix[index_tmp + k] = tmp_;
+		}*/
+	for (int k = n - 1; k >= 0; k--)
+	{
+		max_index = k * row_ind;
+
+		for (int i = k - 1; i >= 0; i--)
+		{
+			index_tmp = i * row_ind;
+			for (int j = 0; j < n; j++)
+			{
+				inverse_matrix[index_tmp + j] -= inverse_matrix[max_index + j] * matrix[index_tmp + k];
+			}
+			matrix[index_tmp + k] = 0;
 		}
+	}
 
 	for (int i = 0; i < n; i++)
 	{
