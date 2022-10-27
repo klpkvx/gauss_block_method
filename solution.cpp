@@ -12,8 +12,8 @@
 
 void get_block(double *matrix, double *block, int i_block, int j_block, int n, int m)
 {
-		int k = n / m;
-		int l = n % m;
+	int k = n / m;
+	int l = n % m;
 	int h = (i_block < k ? m : l);
 	int v = (j_block < k ? m : l);
 	for (int i = 0; i < m; i++)
@@ -145,13 +145,15 @@ void mult(double *a, double *b, double *res, int m1, int m2, int m3, int m)
 	}
 }
 
-void matrix_minus(double *a, double *b, int i_block, int j_block, int k, int m, int l)
+void matrix_minus(double *a, double *b, int m)
 {
-	int h = (i_block < k ? m : l);
-	int v = (j_block < k ? m : l);
-	for (int i = 0; i < h; i++)
-		for (int j = 0; j < v; j++)
-			a[i * m + j] = a[i * m + j] - b[i * m + j];
+	int tmp;
+	for (int i = 0; i < m; i++)
+	{
+		tmp = i * m;
+		for (int j = 0; j < m; j++)
+			a[tmp + j] -= b[tmp + j];
+	}
 }
 
 void residual(double &r1, double &r2, double *matrix, double *inverse_matrix,
@@ -395,8 +397,7 @@ int gauss_method(double *matrix, double *inversed_matrix, int *index, int *index
 					j == k ? mult(block1, invert_block, block4, m, m, l, m) : mult(block1, invert_block, block4, m, m, m, m);
 
 				get_block(matrix, block3, r, j, n, m);
-
-				matrix_minus(block3, block4, r, j, k, m, l);
+				matrix_minus(block3, block4, m);
 				set_block(matrix, block3, r, j, n, m);
 			}
 
@@ -409,7 +410,7 @@ int gauss_method(double *matrix, double *inversed_matrix, int *index, int *index
 					j == k ? mult(block1, invert_block, block4, m, m, l, m) : mult(block1, invert_block, block4, m, m, m, m);
 
 				get_block(inversed_matrix, block3, r, j, n, m);
-				matrix_minus(block3, block4, r, j, k, m, l);
+				matrix_minus(block3, block4, m);
 				set_block(inversed_matrix, block3, r, j, n, m);
 			}
 		}
@@ -470,23 +471,27 @@ int gauss_classic_row(double *matrix, double *inverse_matrix, int *index, int n,
 {
 	int max_index = 0;
 	double tmp_ = 0, max = 0;
-
+	int index_tmp = 0;
 	for (int i = 0; i < n; i++) // Присоединенная матрица
+	{
+		index_tmp = i * row_ind;
 		for (int j = 0; j < n; j++)
-			i == j ? inverse_matrix[i * row_ind + j] = 1. : inverse_matrix[i * row_ind + j] = 0.;
+			i == j ? inverse_matrix[index_tmp + j] = 1. : inverse_matrix[index_tmp + j] = 0.;
+	}
 
 	for (int i = 0; i < n; i++)
 		index[i] = i;
 
 	for (int i = 0; i < n; i++) // Прямой ход метода Гаусса
 	{
-		max = fabs(matrix[i * row_ind + i]); // нахождение главного элемента
+		index_tmp = i * row_ind;
+		max = fabs(matrix[index_tmp + i]); // нахождение главного элемента
 		max_index = i;
 
 		for (int j = i + 1; j < n; j++)
-			if (max < fabs(matrix[i * row_ind + j]))
+			if (max < fabs(matrix[index_tmp + j]))
 			{
-				max = fabs(matrix[i * row_ind + j]);
+				max = fabs(matrix[index_tmp + j]);
 				max_index = j;
 			}
 
@@ -496,50 +501,59 @@ int gauss_classic_row(double *matrix, double *inverse_matrix, int *index, int n,
 
 		for (int j = 0; j < n; j++) // переставляем столбцы местами
 		{
-			tmp_ = matrix[j * row_ind + i];
-			matrix[j * row_ind + i] = matrix[j * row_ind + max_index];
-			matrix[j * row_ind + max_index] = tmp_;
+			index_tmp = j * row_ind;
+			tmp_ = matrix[index_tmp + i];
+			matrix[index_tmp + i] = matrix[index_tmp + max_index];
+			matrix[index_tmp + max_index] = tmp_;
 		}
 
-		if (fabs(matrix[i * row_ind + i]) < matrix_norm * EPS) // если элемент нулевой, метод неприменим
+		index_tmp = i * row_ind;
+
+		if (fabs(matrix[index_tmp + i]) < matrix_norm * EPS) // если элемент нулевой, метод неприменим
 			return IRREVERSIBLE;
 
-		tmp_ = matrix[i * row_ind + i];
-
+		tmp_ = matrix[index_tmp + i];
 		//	tmp_ = 1 / matrix[i * row_ind + i];
-		matrix[i * row_ind + i] = 1.0;
+		matrix[index_tmp + i] = 1.0;
 		for (int j = i + 1; j < n; j++) // умножаем i строку на обратный элемент
-			matrix[i * row_ind + j] /= tmp_;
-
+			matrix[index_tmp + j] /= tmp_;
 		for (int j = 0; j < n; j++) // присоединенная матрица. умножаем i строку на обратный элемент
-			inverse_matrix[i * row_ind + j] /= tmp_;
-
+			inverse_matrix[index_tmp + j] /= tmp_;
 		for (int j = i + 1; j < n; j++)
 		{
 			tmp_ = matrix[j * row_ind + i];
+			max_index = j * row_ind;
 			for (int k = i; k < n; k++) // вычитание строки
-				matrix[j * row_ind + k] -= matrix[i * row_ind + k] * tmp_;
+				matrix[max_index + k] -= matrix[index_tmp + k] * tmp_;
 			for (int k = 0; k < n; k++)
-				inverse_matrix[j * row_ind + k] -= inverse_matrix[i * row_ind + k] * tmp_; // присоединенная матрица. вычитание строки умноженной на число
+				inverse_matrix[max_index + k] -= inverse_matrix[index_tmp + k] * tmp_; // присоединенная матрица. вычитание строки умноженной на число
 		}
 	}
 
 	for (int k = 0; k < n; k++) // Обратный ход
 		for (int i = n - 1; i >= 0; i--)
 		{
+			index_tmp = i * row_ind;
 			tmp_ = inverse_matrix[i * row_ind + k];
 			for (int j = i + 1; j < n; j++)
-				tmp_ -= matrix[i * row_ind + j] * inverse_matrix[j * row_ind + k];
-			inverse_matrix[i * row_ind + k] = tmp_;
+				tmp_ -= matrix[index_tmp + j] * inverse_matrix[j * row_ind + k];
+			inverse_matrix[index_tmp + k] = tmp_;
 		}
 
 	for (int i = 0; i < n; i++)
+	{
+		index_tmp = index[i] * row_ind;
+		max_index = i * row_ind;
 		for (int j = 0; j < n; j++)
-			matrix[index[i] * row_ind + j] = inverse_matrix[i * row_ind + j];
+			matrix[index_tmp + j] = inverse_matrix[max_index + j];
+	}
 
 	for (int i = 0; i < n; i++)
+	{
+		index_tmp = i * row_ind;
 		for (int j = 0; j < n; j++)
-			inverse_matrix[i * row_ind + j] = matrix[i * row_ind + j];
+			inverse_matrix[index_tmp + j] = matrix[index_tmp + j];
+	}
 
 	return SUCCESS;
 }
