@@ -145,13 +145,16 @@ void mult(double *a, double *b, double *res, int m1, int m2, int m3, int m)
 	}
 }
 
-void matrix_minus(double *a, double *b, int m)
+void matrix_minus(double *a, double *b,  int i_block, int j_block, int m, int k, int l)
 {
+
+	int h = (i_block < k) ? m : l;
+	int v = (j_block < k) ? m : l;
 	int tmp;
-	for (int i = 0; i < m; i++)
+	for (int i = 0; i < h; i++)
 	{
 		tmp = i * m;
-		for (int j = 0; j < m; j++)
+		for (int j = 0; j < v; j++)
 			a[tmp + j] -= b[tmp + j];
 	}
 }
@@ -397,7 +400,7 @@ int gauss_method(double *matrix, double *inversed_matrix, int *index, int *index
 					j == k ? mult(block1, invert_block, block4, m, m, l, m) : mult(block1, invert_block, block4, m, m, m, m);
 
 				get_block(matrix, block3, r, j, n, m);
-				matrix_minus(block3, block4, m);
+				matrix_minus(block3, block4, r, j, m, k, l);
 				set_block(matrix, block3, r, j, n, m);
 			}
 
@@ -410,7 +413,7 @@ int gauss_method(double *matrix, double *inversed_matrix, int *index, int *index
 					j == k ? mult(block1, invert_block, block4, m, m, l, m) : mult(block1, invert_block, block4, m, m, m, m);
 
 				get_block(inversed_matrix, block3, r, j, n, m);
-				matrix_minus(block3, block4, m);
+				matrix_minus(block3, block4, r, j, m, k, l);
 				set_block(inversed_matrix, block3, r, j, n, m);
 			}
 		}

@@ -13,5 +13,5 @@ double find_residual(double *matrix, double *inversed_matrix, double *block, dou
 int gauss_classic_row(double *matrix, double *inverse_matrix, int *index, int n, double matrix_norm, int row_ind);
 int gauss_method(double *matrix, double *inversed_matrix, int *index, int *index_block, double *block1, double *block2, double *block3, double *block4, int n, int m, double matrix_norm);
 void mult(double *pa, double *pb, double *pc, int m1, int m2, int m3, int m);
-void matrix_minus(double *a, double *b, int m);
+void matrix_minus(double *a, double *b, int i_block, int j_block, int m, int k, int l);
 #endif // SOLUTION_H
