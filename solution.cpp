@@ -323,7 +323,7 @@ int gauss_method(double *matrix, double *inversed_matrix, int *index, int *index
 {
 	int k = n / m;
 	int l = n % m;
-	int index_min_block = 0, count_blocks = 0, tmp = 0;
+	int index_min_block = 0, count_blocks = 0, tmp = 0, index_0 = 0, index_1 = 0;
 	double norm_min_block = 0, tmp_norm_block = 0;
 	count_blocks = (l > 0 ? k + 1 : k);
 
@@ -442,28 +442,40 @@ int gauss_method(double *matrix, double *inversed_matrix, int *index, int *index
 	for (int k = 0; k < n; k++) // Обратный ход метода Гаусса
 		for (int i = n - 1; i >= 0; i--)
 		{
-			double tmp_ = inversed_matrix[i * n + k];
+			index_0 = i * n;
+			double tmp_ = inversed_matrix[index_0 + k];
 			for (int j = i + 1; j < n; j++)
-				tmp_ -= matrix[i * n + j] * inversed_matrix[j * n + k];
-			inversed_matrix[i * n + k] = tmp_;
+				tmp_ -= matrix[index_0 + j] * inversed_matrix[j * n + k];
+			inversed_matrix[index_0 + k] = tmp_;
 		}
 
 	for (int i = 0; i < n; i++)
+	{
+		index_0 = index_block[i] * n;
+		index_1 = i * n;
 		for (int j = 0; j < n; j++)
-			matrix[index_block[i] * n + j] = inversed_matrix[i * n + j];
+			matrix[index_0 + j] = inversed_matrix[index_1 + j];
+	}
 
 	for (int i = 0; i < n; i++)
+	{
+		index_0 = i * n;
 		for (int j = 0; j < n; j++)
-			inversed_matrix[i * n + j] = matrix[i * n + j];
+			inversed_matrix[index_0 + j] = matrix[index_0 + j];
+	}
 	return 0;
 }
 
 void set_unit_zero_block(double *matrix, double *block, int i_block, int j_block, int n, int m)
 {
 	// делаем единичным диагональный блок и нулевой под диагональным
+	int tmp;
 	for (int i = 0; i < m; i++)
+	{
+		tmp = i * m;
 		for (int j = 0; j < m; j++)
-			j == i &&i_block == j_block ? block[i * m + j] = 1 : block[i * m + j] = 0;
+			j == i &&i_block == j_block ? block[tmp + j] = 1 : block[tmp + j] = 0;
+	}
 	set_block(matrix, block, i_block, j_block, n, m);
 }
 
@@ -512,13 +524,13 @@ int gauss_classic_row(double *matrix, double *inverse_matrix, int *index, int n,
 		if (fabs(matrix[index_tmp + i]) < matrix_norm * EPS) // если элемент нулевой, метод неприменим
 			return IRREVERSIBLE;
 
-		tmp_ = matrix[index_tmp + i];
-		//	tmp_ = 1 / matrix[i * row_ind + i];
+		//	tmp_ = matrix[index_tmp + i];
+		tmp_ = 1 / matrix[index_tmp + i];
 		matrix[index_tmp + i] = 1.0;
 		for (int j = i + 1; j < n; j++) // умножаем i строку на обратный элемент
-			matrix[index_tmp + j] /= tmp_;
+			matrix[index_tmp + j] *= tmp_;
 		for (int j = 0; j < n; j++) // присоединенная матрица. умножаем i строку на обратный элемент
-			inverse_matrix[index_tmp + j] /= tmp_;
+			inverse_matrix[index_tmp + j] *= tmp_;
 		for (int j = i + 1; j < n; j++)
 		{
 			tmp_ = matrix[j * row_ind + i];
@@ -534,7 +546,7 @@ int gauss_classic_row(double *matrix, double *inverse_matrix, int *index, int n,
 		for (int i = n - 1; i >= 0; i--)
 		{
 			index_tmp = i * row_ind;
-			tmp_ = inverse_matrix[i * row_ind + k];
+			tmp_ = inverse_matrix[index_tmp + k];
 			for (int j = i + 1; j < n; j++)
 				tmp_ -= matrix[index_tmp + j] * inverse_matrix[j * row_ind + k];
 			inverse_matrix[index_tmp + k] = tmp_;
