@@ -1,7 +1,7 @@
 #ifndef SOLUTION_H
 #define SOLUTION_H
 
-void get_block(double *matrix, double *block, int i_block, int j_block, int n, int m, int k, int l);
+void get_block(double *matrix, double *block, int i_block, int j_block, int n, int m);
 void set_block(double *matrix, double *block, int i_block, int j_block, int n, int m);
 void set_unit_zero_block(double *matrix, double *block, int i_block, int j_block, int n, int m);
 double norma(double *matrix, int n);

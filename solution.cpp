@@ -10,10 +10,10 @@
 #define IRREVERSIBLE -12345678
 #define SUCCESS 0
 
-void get_block(double *matrix, double *block, int i_block, int j_block, int n, int m, int k, int l)
+void get_block(double *matrix, double *block, int i_block, int j_block, int n, int m)
 {
-	//	int k = n / m;
-	//	int l = n % m;
+		int k = n / m;
+		int l = n % m;
 	int h = (i_block < k ? m : l);
 	int v = (j_block < k ? m : l);
 	for (int i = 0; i < m; i++)
@@ -333,7 +333,7 @@ int gauss_method(double *matrix, double *inversed_matrix, int *index, int *index
 		for (int j = i; j < k; j++) // Нахождение блока с наименьшней нормой
 		{
 			tmp_norm_block = 0;
-			get_block(matrix, block1, i, j, n, m, k, l);
+			get_block(matrix, block1, i, j, n, m);
 			if (gauss_classic_row(block1, invert_block, index, m, matrix_norm, m) != IRREVERSIBLE)
 			{
 				tmp_norm_block = norma(invert_block, m);
@@ -349,8 +349,8 @@ int gauss_method(double *matrix, double *inversed_matrix, int *index, int *index
 
 		for (int j = 0; j < count_blocks; j++) // Переставляем блоки
 		{
-			get_block(matrix, block1, j, i, n, m, k, l);
-			get_block(matrix, invert_block, j, index_min_block, n, m, k, l);
+			get_block(matrix, block1, j, i, n, m);
+			get_block(matrix, invert_block, j, index_min_block, n, m);
 			set_block(matrix, block1, j, index_min_block, n, m);
 			set_block(matrix, invert_block, j, i, n, m);
 		}
@@ -361,40 +361,40 @@ int gauss_method(double *matrix, double *inversed_matrix, int *index, int *index
 			index_block[index_min_block * m + j] = index_block[i * m + j];
 			index_block[i * m + j] = tmp;
 		}
-		get_block(matrix, block1, i, i, n, m, k, l);
+		get_block(matrix, block1, i, i, n, m);
 		gauss_classic_row(block1, invert_block, index, m, matrix_norm, m);
-		get_block(matrix, block1, i, i, n, m, k, l);
+		get_block(matrix, block1, i, i, n, m);
 		set_unit_zero_block(matrix, block1, i, i, n, m);
 
 		for (int j = i + 1; j < count_blocks; j++) // Умножаем i строку на обратный элемент
 		{
-			get_block(matrix, block1, i, j, n, m, k, l);
+			get_block(matrix, block1, i, j, n, m);
 			j == k ? mult(invert_block, block1, block3, m, m, l, m) : mult(invert_block, block1, block3, m, m, m, m);
 			set_block(matrix, block3, i, j, n, m);
 		}
 
 		for (int j = 0; j < count_blocks; j++) // Умножаем i строку на обратный элемент
 		{
-			get_block(inversed_matrix, block1, i, j, n, m, k, l); // В присоединенной матрице
+			get_block(inversed_matrix, block1, i, j, n, m); // В присоединенной матрице
 			j == k ? mult(invert_block, block1, block3, m, m, l, m) : mult(invert_block, block1, block3, m, m, m, m);
 			set_block(inversed_matrix, block3, i, j, n, m);
 		}
 
 		for (int r = i + 1; r < count_blocks; r++)
 		{
-			get_block(matrix, block1, r, i, n, m, k, l);
-			get_block(matrix, block3, r, i, n, m, k, l);
+			get_block(matrix, block1, r, i, n, m);
+			get_block(matrix, block3, r, i, n, m);
 			set_unit_zero_block(matrix, block3, r, i, n, m);
 
 			for (int j = i + 1; j < count_blocks; j++)
 			{
-				get_block(matrix, invert_block, i, j, n, m, k, l);
+				get_block(matrix, invert_block, i, j, n, m);
 				if (r == k)
 					j == k ? mult(block1, invert_block, block4, l, m, l, m) : mult(block1, invert_block, block4, l, m, m, m);
 				else
 					j == k ? mult(block1, invert_block, block4, m, m, l, m) : mult(block1, invert_block, block4, m, m, m, m);
 
-				get_block(matrix, block3, r, j, n, m, k, l);
+				get_block(matrix, block3, r, j, n, m);
 
 				matrix_minus(block3, block4, r, j, k, m, l);
 				set_block(matrix, block3, r, j, n, m);
@@ -402,13 +402,13 @@ int gauss_method(double *matrix, double *inversed_matrix, int *index, int *index
 
 			for (int j = 0; j < count_blocks; j++)
 			{
-				get_block(inversed_matrix, invert_block, i, j, n, m, k, l);
+				get_block(inversed_matrix, invert_block, i, j, n, m);
 				if (r == k)
 					j == k ? mult(block1, invert_block, block4, l, m, l, m) : mult(block1, invert_block, block4, l, m, m, m);
 				else
 					j == k ? mult(block1, invert_block, block4, m, m, l, m) : mult(block1, invert_block, block4, m, m, m, m);
 
-				get_block(inversed_matrix, block3, r, j, n, m, k, l);
+				get_block(inversed_matrix, block3, r, j, n, m);
 				matrix_minus(block3, block4, r, j, k, m, l);
 				set_block(inversed_matrix, block3, r, j, n, m);
 			}
@@ -417,7 +417,7 @@ int gauss_method(double *matrix, double *inversed_matrix, int *index, int *index
 
 	if (l != 0)
 	{
-		get_block(matrix, block1, k, k, n, m, k, l);
+		get_block(matrix, block1, k, k, n, m);
 		if (gauss_classic_row(block1, invert_block, index, l, matrix_norm, m) == IRREVERSIBLE)
 			return CANNOT_SOLVE;
 		set_unit_zero_block(matrix, block4, k, k, n, m);
@@ -425,13 +425,13 @@ int gauss_method(double *matrix, double *inversed_matrix, int *index, int *index
 		{
 			if (j == k)
 			{
-				get_block(inversed_matrix, block1, k, j, n, m, k, l);
+				get_block(inversed_matrix, block1, k, j, n, m);
 				mult(invert_block, block1, block3, l, l, l, m);
 				set_block(inversed_matrix, block3, k, j, n, m);
 			}
 			else
 			{
-				get_block(inversed_matrix, block1, k, j, n, m, k, l);
+				get_block(inversed_matrix, block1, k, j, n, m);
 				mult(invert_block, block1, block3, l, l, m, m);
 				set_block(inversed_matrix, block3, k, j, n, m);
 			}
