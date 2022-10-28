@@ -7,7 +7,10 @@ void set_unit_zero_block(double *matrix, double *block, int i_block, int j_block
 double norma(double *matrix, int n);
 
 void residual(double &r1, double &r2, double *matrix, double *inverse_matrix,
-							double *block, double *sum_array, int n, int m, int res, int r);
+							double *result_matrix, double *unit_matrix, int n, int m, int result_calc, int r);
+void matrix_subtraction(double *matrix_1, double *unit_matrix, int n);
+void mult_matrix(double *a, double *b, double *c, int n, int m);
+
 double find_residual(double *matrix, double *inversed_matrix, double *block, double *sum_array, int n, int m);
 
 int gauss_classic_row(double *matrix, double *inverse_matrix, int *index, int n, double matrix_norm, int row_ind);

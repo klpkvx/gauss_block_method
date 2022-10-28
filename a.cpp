@@ -16,9 +16,9 @@ int main(int argc, char **argv)
   int *index = nullptr;
   double *matrix = nullptr;         // Исходная матрица
   double *inverse_matrix = nullptr; // Обратная матрица
-  double *block = nullptr;          // для расчета невязки
+  double *result_matrix = nullptr;  // для расчета невязки
   double *block1 = nullptr, *block2 = nullptr, *block3 = nullptr, *block4 = nullptr;
-  double *sum_array = nullptr; // Дополнительная матрица для расчета невязки
+  double *unit_matrix = nullptr; // Дополнительная матрица для расчета невязки
   double t1 = 0, t2 = 0;
   double r1 = 0, r2 = 0;
   double matrix_norm = 0;
@@ -119,8 +119,8 @@ int main(int argc, char **argv)
   if (formulae == 0)
     fclose(file);
 
-  sum_array = new double[m];
-  if (!sum_array)
+  unit_matrix = new double[n * n];
+  if (!unit_matrix)
   {
     fprintf(stderr, "Cannot allocate!\n");
     delete[] matrix;
@@ -130,26 +130,34 @@ int main(int argc, char **argv)
     return (int)ERRORS::CANNOT_ALLOCATE;
   }
   else
-    for (int i = 0; i < m; i++)
-      sum_array[i] = 0;
+    for (int i = 0; i < n; i++)
+    {
+      for (int j = 0; j < n; j++)
+      {
+        if (i == j)
+          unit_matrix[i * n + j] = 1.;
+        else
+          unit_matrix[i * n + j] = 0.;
+      }
+    }
 
-  block = new double[m * m]; // Для расчета невязки
-  if (!block)
+  result_matrix = new double[n * n]; // Для расчета невязки
+  if (!result_matrix)
   {
     fprintf(stderr, "Cannot allocate!\n");
     delete[] matrix;
     delete[] inverse_matrix;
-    delete[] sum_array;
+    delete[] unit_matrix;
     if (formulae == 0)
       fclose(file);
     return (int)ERRORS::CANNOT_ALLOCATE;
   }
 
-  for (int i = 0; i < m * m; i++)
-    block[i] = 0;
+  for (int i = 0; i < n * n; i++)
+    result_matrix[i] = 0;
 
   t2 = clock(); // Вычисление невязки
-  residual(r1, r2, matrix, inverse_matrix, block, sum_array, n, m, result_calc, r);
+  residual(r1, r2, matrix, inverse_matrix, result_matrix, unit_matrix, n, m, result_calc, r);
   t2 = (clock() - t2) / CLOCKS_PER_SEC;
 
   printf("\n");
@@ -158,8 +166,8 @@ int main(int argc, char **argv)
       argv[0], task, r1, r2, t1, t2, formulae, n, m);
   delete[] matrix;
   delete[] inverse_matrix;
-  delete[] block;
-  delete[] sum_array;
+  delete[] result_matrix;
+  delete[] unit_matrix;
   delete[] index;
   delete[] block1;
   delete[] block2;

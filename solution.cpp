@@ -163,9 +163,15 @@ void matrix_minus(double *a, double *b, int i_block, int j_block, int k, int m, 
 			a[tmp + j] = a[tmp + j] - b[tmp + j];
 	}
 }
+void matrix_subtraction(double *matrix_1, double *unit_matrix, int n)
+{
+	for (int i = 0; i < n; i++)
+		for (int j = 0; j < n; j++)
+			matrix_1[i * n + j] -= unit_matrix[i * n + j];
+}
 
 void residual(double &r1, double &r2, double *matrix, double *inverse_matrix,
-							double *block, double *sum_array, int n, int m, int result_calc, int r)
+							double *result_matrix, double *unit_matrix, int n, int m, int result_calc, int r)
 {
 	if (result_calc == SUCCESS) //  Если алгоритм применим
 	{
@@ -175,8 +181,13 @@ void residual(double &r1, double &r2, double *matrix, double *inverse_matrix,
 			print_matrix(r, n, inverse_matrix);
 			if (n <= 11000)
 			{
-				r1 = find_residual(matrix, inverse_matrix, block, sum_array, n, m); // ||A * A^(-1) - E ||
-				r2 = find_residual(inverse_matrix, matrix, block, sum_array, n, m); //   ||A^(-1)* A - E ||
+				mult_matrix(matrix, inverse_matrix, result_matrix, n, m); // A * A^(-1)
+				matrix_subtraction(result_matrix, unit_matrix, n);
+				r1 = norma(result_matrix, n); // ||A * A^(-1) - E ||
+
+				mult_matrix(inverse_matrix, matrix, result_matrix, n, m); // A^(-1) * A
+				matrix_subtraction(result_matrix, unit_matrix, n);
+				r2 = norma(result_matrix, n); // ||A * A^(-1) - E ||
 			}
 			else
 			{
@@ -586,4 +597,126 @@ int gauss_classic_row(double *matrix, double *inverse_matrix, int *index, int n,
 	}
 
 	return SUCCESS;
+}
+
+void mult_matrix(double *a, double *b, double *c, int n, int m)
+{
+	int k = 0, l = 0, i = 0, j = 0;
+	int v = 0, h = 0;
+	int r = 0, t = 0;
+	int s = 0;
+	int ah = 0;
+	int q = 0;
+	int v3 = 0, h3 = 0;
+	double s00 = 0, s01 = 0, s02 = 0, s10 = 0, s20 = 0, s11 = 0, s12 = 0,
+				 s21 = 0, s22 = 0, sum = 0;
+	double *pa = nullptr, *pb = nullptr, *pc = nullptr;
+	k = n / m;
+	l = n % m;
+	int bl = (l != 0 ? k + 1 : k);
+	for (i = 0; i < bl; i++)
+	{
+		for (j = 0; j < bl; j++) // c_ij = \sum s=1^l a_is*b_sj;
+		{
+			// Размер c_ij v x h высота на ширину v строк , h столбцов
+			v = (i < k ? m : l);
+			h = (j < k ? m : l);
+			pc = c + i * n * m + j * m; //верхний левый угол блока
+			for (r = 0; r < v; r++)			// Весь блок матрицы С попадает в кэш
+																	// память.Обнулим матрицу C.
+				for (t = 0; t < h; t++)
+					pc[r * n + t] = 0; // может быть pc[r * h + t] = 0;
+			// Начнем цикл по S.
+			for (s = 0; s < bl; s++)
+			{
+				ah = (s < k ? m : l);				// столбцов в A
+				pa = a + i * n * m + s * m; // A_is | v x ah
+				pb = b + s * n * m + j * m; // B_sj | ah x h
+				// Умножаем блок A_is на B_sj Обслуживаем случаи:
+				v3 = v % 3;
+				h3 = h % 3;
+				for (r = 0; r < v3;
+						 r++) // первые не поделившиеся на 3 строки обслуживаем
+				{
+					for (t = 0; t < h3;
+							 t++) // Внутри строки сделали кусок, который не
+										// поделился нацело |****|_______________|
+					{
+						sum = 0; // s=0;
+						for (q = 0; q < ah; q++)
+							sum += pa[r * n + q] * pb[q * n + t]; // s
+						pc[r * n + t] += sum;										// s
+					}
+					for (; t < h;
+							 t += 3) // тут поделилось. Делаем разворачивание в одной
+											 // строке |____|************|
+					{
+						s00 = 0;
+						s01 = 0;
+						s02 = 0;
+						for (q = 0; q < ah; q++)
+						{
+							s00 += pa[r * n + q] * pb[q * n + t];
+							s01 += pa[r * n + q] * pb[q * n + (t + 1)];
+							s02 += pa[r * n + q] * pb[q * n + (t + 2)];
+						}
+						pc[r * n + t] += s00;
+						pc[r * n + (t + 1)] += s01;
+						pc[r * n + (t + 2)] += s02;
+					}
+				}
+				for (; r < v; r += 3) // обслуживаем другие случаи.
+				{
+					for (t = 0; t < h3; t++)
+					{
+						s00 = 0;
+						s10 = 0;
+						s20 = 0;
+						for (q = 0; q < ah; q++)
+						{
+							s00 += pa[r * n + q] * pb[q * n + t];
+							s10 += pa[(r + 1) * n + q] * pb[q * n + t];
+							s20 += pa[(r + 2) * n + q] * pb[q * n + t];
+						}
+						pc[r * n + t] += s00;
+						pc[(r + 1) * n + t] += s10;
+						pc[(r + 2) * n + t] += s20;
+					}
+					for (; t < h; t += 3) // здесь все делится на 3
+					{
+						s00 = 0;
+						s01 = 0;
+						s02 = 0;
+						s10 = 0;
+						s11 = 0;
+						s12 = 0;
+						s20 = 0;
+						s21 = 0;
+						s22 = 0; // 9 регистров
+						for (q = 0; q < ah; q++)
+						{
+							s00 += pa[r * n + q] * pb[q * n + t];
+							s01 += pa[r * n + q] * pb[q * n + (t + 1)];
+							s02 += pa[r * n + q] * pb[q * n + (t + 2)];
+							s10 += pa[(r + 1) * n + q] * pb[q * n + t];
+							s11 += pa[(r + 1) * n + q] * pb[q * n + (t + 1)];
+							s12 += pa[(r + 1) * n + q] * pb[q * n + (t + 2)];
+							s20 += pa[(r + 2) * n + q] * pb[q * n + t];
+							s21 += pa[(r + 2) * n + q] * pb[q * n + (t + 1)];
+							s22 += pa[(r + 2) * n + q] * pb[q * n + (t + 2)];
+						}
+						pc[r * n + t] += s00;
+						pc[r * n + (t + 1)] += s01;
+						pc[r * n + (t + 2)] += s02;
+						pc[(r + 1) * n + t] += s10;
+						pc[(r + 1) * n + (t + 1)] += s11;
+						pc[(r + 1) * n + (t + 2)] += s12;
+						pc[(r + 2) * n + t] += s20;
+						pc[(r + 2) * n + (t + 1)] += s21;
+						pc[(r + 2) * n + (t + 2)] += s22;
+					}
+				}
+			}
+		}
+	}
 }
