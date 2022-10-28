@@ -537,17 +537,18 @@ int gauss_classic_row(double *matrix, double *inverse_matrix, int *index, int n,
 		}
 
 		if (fabs(matrix[index_0 + i]) < matrix_norm * EPS) // если элемент нулевой, метод неприменим
+		{
 			return IRREVERSIBLE;
+		}
 
-		tmp_ = matrix[index_0 + i];
-
-		//	tmp_ = 1 / matrix[i * row_ind + i];
+		// tmp_ = matrix[index_0 + i];
+		tmp_ = 1 / matrix[index_0 + i];
 		matrix[index_0 + i] = 1.0;
 		for (int j = i + 1; j < n; j++) // умножаем i строку на обратный элемент
-			matrix[index_0 + j] /= tmp_;
+			matrix[index_0 + j] *= tmp_;
 
 		for (int j = 0; j < n; j++) // присоединенная матрица. умножаем i строку на обратный элемент
-			inverse_matrix[index_0 + j] /= tmp_;
+			inverse_matrix[index_0 + j] *= tmp_;
 
 		for (int j = i + 1; j < n; j++)
 		{
@@ -559,14 +560,14 @@ int gauss_classic_row(double *matrix, double *inverse_matrix, int *index, int n,
 		}
 	}
 
-	for (int k = 0; k < n; k++) // Обратный ход
-		for (int i = n - 1; i >= 0; i--)
+	for (int i = 0; i < n; i++) // Обратный ход
+		for (int j = n - 1; j >= 0; j--)
 		{
-			index_0 = i * row_ind;
-			tmp_ = inverse_matrix[index_0 + k];
-			for (int j = i + 1; j < n; j++)
-				tmp_ -= matrix[index_0 + j] * inverse_matrix[j * row_ind + k];
-			inverse_matrix[index_0 + k] = tmp_;
+			index_0 = j * row_ind;
+			tmp_ = inverse_matrix[index_0 + i];
+			for (int k = j + 1; k < n; k++)
+				tmp_ -= matrix[index_0 + k] * inverse_matrix[k * row_ind + i];
+			inverse_matrix[index_0 + i] = tmp_;
 		}
 
 	for (int i = 0; i < n; i++)
